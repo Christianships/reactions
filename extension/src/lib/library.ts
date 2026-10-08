@@ -42,9 +42,19 @@ export function githubPageUrl(c: Config, r: Reaction): string {
 export async function loadIndex(c: Config): Promise<Reaction[]> {
   try {
     const data = JSON.parse(await fs.readFile(indexPath(c), "utf8"));
-    return Array.isArray(data) ? data : [];
+    if (!Array.isArray(data)) throw new Error("not an array");
+    return data
+      .filter((r) => r && typeof r.id === "string" && typeof r.file === "string")
+      .map((r) => ({
+        ...r,
+        name: typeof r.name === "string" ? r.name : r.file,
+        tags: Array.isArray(r.tags) ? r.tags.filter((t: unknown) => typeof t === "string") : [],
+        addedAt: typeof r.addedAt === "string" ? r.addedAt : "",
+      }));
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
+    if (e instanceof SyntaxError || (e instanceof Error && e.message === "not an array"))
+      throw new Error(`${indexPath(c)} is corrupt; fix or restore it (git checkout library/index.json)`);
     throw e;
   }
 }

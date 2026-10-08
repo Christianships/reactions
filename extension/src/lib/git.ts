@@ -41,9 +41,10 @@ async function doSync(c: Config, message: string): Promise<SyncResult> {
   }
   await git(cwd, ["add", "library"]);
   let committed = false;
-  const staged = await git(cwd, ["diff", "--cached", "--name-only"]);
+  // Only library/ is committed, even if something else is already staged
+  const staged = await git(cwd, ["diff", "--cached", "--name-only", "--", "library"]);
   if (staged.trim()) {
-    await git(cwd, ["commit", "-m", message]);
+    await git(cwd, ["commit", "-m", message, "--", "library"]);
     committed = true;
   }
   const hasRemote = (await git(cwd, ["remote"])).trim().length > 0;

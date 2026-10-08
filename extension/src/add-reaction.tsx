@@ -19,8 +19,10 @@ export default function Command() {
     (async () => {
       try {
         const clip = await Clipboard.read();
-        if (clip.file) setClipFile(decodeURIComponent(clip.file.replace(/^file:\/\//, "")));
-        else if (looksLikeUrl(clip.text)) setUrl(clip.text!.trim());
+        if (clip.file) {
+          const f = clip.file.startsWith("file://") ? decodeURIComponent(clip.file.slice(7)) : clip.file;
+          if (/\.(gif|png|jpe?g|webp)$/i.test(f)) setClipFile(f);
+        } else if (looksLikeUrl(clip.text)) setUrl(clip.text!.trim());
       } catch {
         // clipboard unavailable
       }
@@ -44,7 +46,9 @@ export default function Command() {
     setBusy(true);
     try {
       const tags = [...(v.pickedTags ?? []), ...(v.newTags ?? "").split(",")];
-      const filePath = v.useClipboard && clipFile ? clipFile : v.files?.[0];
+      const picked = v.files?.[0];
+      const typedUrl = looksLikeUrl(v.url);
+      const filePath = picked ?? (!typedUrl && v.useClipboard && clipFile ? clipFile : undefined);
       const r = await addReaction(config, { name: v.name, tags, url: filePath ? undefined : v.url, filePath });
       toast.hide();
       await toastAdded(config, r);

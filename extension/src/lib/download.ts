@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { Config, Reaction, addToIndex, parseTags, writeImage } from "./library";
+import { Config, Reaction, addToIndex, imagesDir, loadIndex, parseTags, writeImage } from "./library";
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
@@ -14,7 +14,11 @@ export function sniff(buf: Buffer): ImageKind | "mp4" | undefined {
   if (buf[0] === 0x89 && head.slice(1, 4) === "PNG") return ".png";
   if (buf[0] === 0xff && buf[1] === 0xd8) return ".jpg";
   if (head.startsWith("RIFF") && head.slice(8, 12) === "WEBP") return ".webp";
-  if (head.slice(4, 8) === "ftyp" || head.slice(4, 8) === "wide") return "mp4";
+  if (head.slice(4, 8) === "ftyp") {
+    // AVIF/HEIC share the ftyp box but are images, not videos
+    return /^(avif|avis|heic|heix|hevc|mif1|msf1)$/.test(buf.subarray(8, 12).toString("latin1")) ? undefined : "mp4";
+  }
+  if (head.slice(4, 8) === "wide") return "mp4";
   return undefined;
 }
 
@@ -119,7 +123,11 @@ export async function fetchImage(url: string): Promise<Fetched> {
     throw new Error(`Unsupported content type: ${type || "unknown"}`);
 
   const candidates = extractCandidates(parsed.toString(), buf.toString("utf8"));
-  if (candidates.length === 0) throw new Error("Couldn't find an image on that page");
+  if (candidates.length === 0) {
+    if (/\.(mp4|webm)\b/i.test(buf.toString("utf8")))
+      throw new Error("Only an mp4 video was available; only GIF, PNG, JPEG and WebP are supported");
+    throw new Error("Couldn't find an image on that page");
+  }
   let sawVideo = false;
   let lastErr = "";
   for (const candidate of candidates) {
@@ -162,12 +170,18 @@ export async function addReaction(c: Config, input: AddInput): Promise<Reaction>
   } else {
     throw new Error("Provide a URL or a file");
   }
+  await loadIndex(c); // fail before writing anything if index.json is corrupt
   const file = await writeImage(c, name, fetched.ext, fetched.data);
-  return addToIndex(c, {
-    name,
-    tags: parseTags(input.tags),
-    file,
-    sourceUrl: fetched.sourceUrl || undefined,
-    data: fetched.data,
-  });
+  try {
+    return await addToIndex(c, {
+      name,
+      tags: parseTags(input.tags),
+      file,
+      sourceUrl: fetched.sourceUrl || undefined,
+      data: fetched.data,
+    });
+  } catch (e) {
+    await fs.rm(path.join(imagesDir(c), file), { force: true });
+    throw e;
+  }
 }

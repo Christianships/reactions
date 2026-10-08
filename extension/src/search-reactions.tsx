@@ -46,7 +46,16 @@ function EditForm({ reaction, onDone }: { reaction: Reaction; onDone: () => void
                 await showToast({ style: Toast.Style.Failure, title: "Name is required" });
                 return false;
               }
-              await updateReaction(config, reaction.id, { name, tags: parseTags(v.tags) });
+              try {
+                await updateReaction(config, reaction.id, { name, tags: parseTags(v.tags) });
+              } catch (e) {
+                await showToast({
+                  style: Toast.Style.Failure,
+                  title: "Couldn't save",
+                  message: e instanceof Error ? e.message : String(e),
+                });
+                return false;
+              }
               onDone();
               pop();
               if (config.autoSync) await syncWithToast(config, `edit: ${reaction.file}`);
@@ -160,7 +169,16 @@ export default function Command() {
                         }))
                       )
                         return;
-                      await deleteReaction(config, r.id);
+                      try {
+                        await deleteReaction(config, r.id);
+                      } catch (e) {
+                        await showToast({
+                          style: Toast.Style.Failure,
+                          title: "Couldn't delete",
+                          message: e instanceof Error ? e.message : String(e),
+                        });
+                        return;
+                      }
                       revalidate();
                       if (config.autoSync) await syncWithToast(config, `remove: ${r.file}`);
                     }}
