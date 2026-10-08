@@ -1,0 +1,98 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "reactions",
+  "title": "Reactions",
+  "description": "Your personal reaction GIF library: search, paste straight into any app, and sync to GitHub.",
+  "icon": "command-icon.png",
+  "author": "christian",
+  "categories": ["Media", "Productivity"],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "search-reactions",
+      "title": "Search Reactions",
+      "subtitle": "Reactions",
+      "description": "Browse your reaction GIFs and paste one right into the app you're in.",
+      "mode": "view"
+    },
+    {
+      "name": "add-reaction",
+      "title": "Add Reaction",
+      "subtitle": "Reactions",
+      "description": "Add a reaction from a URL, a file, or the clipboard.",
+      "mode": "view"
+    },
+    {
+      "name": "quick-add-reaction",
+      "title": "Quick Add Reaction",
+      "subtitle": "Reactions",
+      "description": "Add a reaction from a URL without a form.",
+      "mode": "no-view",
+      "arguments": [
+        { "name": "url", "placeholder": "Image or GIF page URL", "type": "text", "required": true },
+        { "name": "name", "placeholder": "Name", "type": "text", "required": true },
+        { "name": "tags", "placeholder": "Tags (comma separated)", "type": "text", "required": false }
+      ]
+    },
+    {
+      "name": "sync-reactions",
+      "title": "Sync Reactions",
+      "subtitle": "Reactions",
+      "description": "Pull, commit and push the library to GitHub.",
+      "mode": "no-view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "libraryPath",
+      "title": "Library Folder",
+      "description": "Git checkout containing library/images and library/index.json.",
+      "type": "directory",
+      "required": false,
+      "default": "~/Developer/reactions"
+    },
+    {
+      "name": "githubRepo",
+      "title": "GitHub Repository",
+      "description": "owner/name, used for public URLs.",
+      "type": "textfield",
+      "required": false,
+      "default": "Christianships/reactions"
+    },
+    {
+      "name": "branch",
+      "title": "Branch",
+      "description": "Branch to sync and link to.",
+      "type": "textfield",
+      "required": false,
+      "default": "main"
+    },
+    {
+      "name": "autoSync",
+      "title": "Sync",
+      "label": "Automatically commit and push changes",
+      "description": "Commit and push after every add, edit or delete.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^2.4.1",
+    "@raycast/utils": "^2.0.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix"
+  }
+}
